@@ -136,7 +136,7 @@ function logHeaderLines(pmi = true) {
 	const firstLine = pmi ? "------ Estimated Home buying power w/Potential PMI ------" : "------ Home buying power without PMI (min 20% down payment) ------";
 	console.log(firstLine);
 	
-	let header = "Period\tDown Payment\t";
+	let header = "Period      Down Payment\t";
 	if (calculateThirtyYearMortgage) {
 		header += "30 year range\t";
 	}
@@ -151,7 +151,7 @@ function logHeaderLines(pmi = true) {
 	console.log(header);
 }
 
-function logEntryLine(downPaymentEstimate, comfortableThirtyYearPurchasePrice, maxThirtyYearPurchasePrice, comfortableFifteenYearPurchasePrice, maxFifteenYearPurchasePrice, month, pmi = false, riskOfPMIOnThirtyYear = "NO", riskOfPMIOnFifteenYear = "NO")
+function logEntryLine(downPaymentEstimate, comfortableThirtyYearPurchasePrice, maxThirtyYearPurchasePrice, comfortableFifteenYearPurchasePrice, maxFifteenYearPurchasePrice, month, pmi = false, riskOfPMIOnThirtyYear = "NO", riskOfPMIOnFifteenYear = "NO", extraPaymentApplied = 0)
 {
 	const estimatedDownPaymentStr = downPaymentEstimate.toFixed(2);
 	const thirtyYearRangeStr = `${comfortableThirtyYearPurchasePrice}-${maxThirtyYearPurchasePrice}`;
@@ -162,7 +162,7 @@ function logEntryLine(downPaymentEstimate, comfortableThirtyYearPurchasePrice, m
 	dateToLog.setMonth(today.getMonth() + month - 1);
 	const monthStr = dateToLog.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
 
-	let line = monthStr  + "\t" + estimatedDownPaymentStr + "\t";
+	let line = monthStr  + "\t" + estimatedDownPaymentStr + "\t\t";
 	if (calculateThirtyYearMortgage) {
 		line += thirtyYearRangeStr + "\t";
 	}
@@ -176,6 +176,10 @@ function logEntryLine(downPaymentEstimate, comfortableThirtyYearPurchasePrice, m
 		if (calculateFifteenYearMortgage) line += riskOfPMIOnFifteenYear + "\t";
 	}
 
+    if (extraPaymentApplied > 0) {
+        line += `(Includes extra payment of $${extraPaymentApplied})`;
+    }
+
 	console.log(line);
 }
 
@@ -186,6 +190,15 @@ function calculateHouseBuyingPowerOverTimeWithoutPMI() {
 	let estimatedHomeProceeds = currentEstimatedHomeProceeds;
 
 	for (let month = 1; month < numberOfMonthsToCalculate + 1; month++) {
+        let extraPaymentApplied = 0;
+		estimatedHomeSavings = estimatedHomeSavings * (1 + monthlySavingsAccountRate);
+		estimatedHomeSavings += estimatedMonthlySavingsAmount;
+		if (extraSavingsPeriods[`${month}`]) {
+            const extraSavings = extraSavingsPeriods[`${month}`];
+            extraPaymentApplied = extraSavings;
+            estimatedHomeSavings += extraSavings;
+		}
+
 		const downPaymentEstimate = estimatedHomeProceeds + estimatedHomeSavings;
 		let maxThirtyYearPurchasePrice = 0;
 		let comfortableThirtyYearPurchasePrice = 0;
@@ -200,15 +213,9 @@ function calculateHouseBuyingPowerOverTimeWithoutPMI() {
 			maxFifteenYearPurchasePrice = calculateMaxHomePrice(downPaymentEstimate, fifteenYearFixedInterestRate, maxMonthlyPayment, 15);
 			comfortableFifteenYearPurchasePrice = calculateMaxHomePrice(downPaymentEstimate, fifteenYearFixedInterestRate, comfortableMonthlyPayment, 15);
 		}
-
-		logEntryLine(downPaymentEstimate, comfortableThirtyYearPurchasePrice, maxThirtyYearPurchasePrice, comfortableFifteenYearPurchasePrice, maxFifteenYearPurchasePrice, month);
-
-		estimatedHomeSavings = estimatedHomeSavings * (1 + monthlySavingsAccountRate);
-		estimatedHomeSavings += estimatedMonthlySavingsAmount;
-		if (extraSavingsPeriods[`${month}`]) {
-			estimatedHomeSavings += extraSavingsPeriods[`${month}`];
-		}
-		estimatedHomeProceeds = estimatedHomeProceeds * (1 + monthlyHomeAppreciationRate);
+        logEntryLine(downPaymentEstimate, comfortableThirtyYearPurchasePrice, maxThirtyYearPurchasePrice, comfortableFifteenYearPurchasePrice, maxFifteenYearPurchasePrice, month, false, "NO", "NO", extraPaymentApplied);
+		
+        estimatedHomeProceeds = estimatedHomeProceeds * (1 + monthlyHomeAppreciationRate);
 
 		estimatedHomeSavings = Math.round(estimatedHomeSavings * 100) / 100;
 		estimatedHomeProceeds = Math.round(estimatedHomeProceeds * 100) / 100;
