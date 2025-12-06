@@ -172,7 +172,7 @@ function logEntryLine(downPaymentEstimate, comfortableThirtyYearPurchasePrice, m
 
 	if (pmi)
 	{
-		if (calculateThirtyYearMortgage) line += riskOfPMIOnThirtyYear + "\t";
+		if (calculateThirtyYearMortgage) line += riskOfPMIOnThirtyYear + "\t\t\t";
 		if (calculateFifteenYearMortgage) line += riskOfPMIOnFifteenYear + "\t";
 	}
 
